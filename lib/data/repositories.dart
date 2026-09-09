@@ -84,16 +84,27 @@ class DataRepository {
     try {
       lastLoadWasCached = false;
       final response = await client.dio.get(path);
-      final rows = (response.data[key] as List<dynamic>).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      final payload = response.data;
+      if (payload is! Map || payload[key] is! List) throw const FormatException('Payload API invalide');
+      final rows = (payload[key] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
       await cache.saveList(key, rows);
       return rows.map(parse).toList();
-    } on DioException catch (error) {
-      final cached = cache.readList(key);
-      if (cached.isNotEmpty) {
+    } catch (error) {
+      final cached = _readCached(key, parse);
+      if (cached != null && cached.isNotEmpty) {
         lastLoadWasCached = true;
-        return cached.map(parse).toList();
+        return cached;
       }
-      throw NetworkFailure(error.message ?? 'Données indisponibles. Vérifiez votre connexion.');
+      final message = error is DioException ? error.message : null;
+      throw NetworkFailure(message ?? 'Données indisponibles. Vérifiez votre connexion.');
+    }
+  }
+
+  List<T>? _readCached<T>(String key, T Function(Map<String, dynamic>) parse) {
+    try {
+      return cache.readList(key).map(parse).toList();
+    } on Object {
+      return null;
     }
   }
 }

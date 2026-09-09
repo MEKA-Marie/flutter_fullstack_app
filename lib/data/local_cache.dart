@@ -26,8 +26,15 @@ class HiveLocalCache implements LocalCache {
   List<Map<String, dynamic>> readList(String key) {
     final raw = _box.get(key);
     if (raw == null) return [];
-    final decoded = jsonDecode(raw) as List<dynamic>;
-    return decoded.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return decoded.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    } on FormatException {
+      return [];
+    } on TypeError {
+      return [];
+    }
   }
 
   @override

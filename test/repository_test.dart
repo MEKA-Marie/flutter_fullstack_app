@@ -43,4 +43,10 @@ void main() {
 
     expect(repository.todos(), throwsA(isA<NetworkFailure>()));
   });
+
+  test('malformed API payloads become user-facing failures', () async {
+    when(() => dio.get('/products?limit=30')).thenAnswer((_) async => Response(requestOptions: RequestOptions(path: '/products?limit=30'), data: {'unexpected': []}));
+
+    expect(repository.products(), throwsA(isA<NetworkFailure>()));
+  });
 }
