@@ -46,6 +46,15 @@ void main() {
     expect(session?.refreshToken, 'refresh-123');
   });
 
+  test('register rejects an API response without a JWT', () async {
+    when(() => dio.post('/users/add', data: any(named: 'data'))).thenAnswer((_) async => Response(
+          requestOptions: RequestOptions(path: '/users/add'),
+          data: {'id': 99, 'username': 'new-user'},
+        ));
+
+    expect(repository.register('new-user', 'password'), throwsA(isA<NetworkFailure>()));
+  });
+
   test('logout clears the persisted session', () async {
     await cache.saveSession('access-123', 'emilys');
 

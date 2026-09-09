@@ -61,9 +61,15 @@ class AuthRepository implements AuthGateway {
   Future<Session> register(String username, String password) async {
     try {
       final response = await client.dio.post('/users/add', data: {'username': username, 'password': password, 'firstName': username, 'lastName': 'Pulseboard'});
-      final session = Session(token: response.data['accessToken'] as String? ?? 'registered-demo', username: response.data['username'] as String? ?? username);
+      final payload = response.data;
+      if (payload is! Map || payload['accessToken'] is! String || (payload['accessToken'] as String).isEmpty) {
+        throw NetworkFailure('Inscription créée, mais cette API ne fournit pas de JWT. Utilisez une API d’authentification persistante.');
+      }
+      final session = Session(token: payload['accessToken'] as String, refreshToken: payload['refreshToken'] as String?, username: payload['username'] as String? ?? username);
       await _persist(session);
       return session;
+    } on NetworkFailure {
+      rethrow;
     } on DioException catch (error) {
       throw NetworkFailure(error.response?.data?['message'] as String? ?? 'Inscription impossible.');
     }

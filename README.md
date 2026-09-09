@@ -9,13 +9,14 @@ Application Flutter full-stack de suivi de données, construite avec une sépara
 - `lib/data/api_client.dart` : client Dio et intercepteur bearer token.
 - `lib/data/local_cache.dart` : contrat de cache, Hive JSON et cache mémoire de test.
 - `lib/data/repositories.dart` : AuthRepository et DataRepository, indépendants de l’UI.
-- `lib/main.dart` : composition de l’application et présentation Flutter.
+- `lib/presentation/app.dart` : écrans et présentation Flutter.
+- `lib/main.dart` : composition root et initialisation des dépendances.
 
 ## APIs utilisées
 
 - [DummyJSON](https://dummyjson.com) fournit l’authentification et les produits, utilisateurs et tâches.
 - Identifiants de démonstration : `emilys` / `emilyspass`.
-- L’inscription utilise `POST /users/add`. DummyJSON ne persiste pas réellement les utilisateurs créés et ne renvoie pas de JWT sur cette route ; l'application conserve donc une session de démonstration après la création, tandis que le login de production utilise le JWT retourné par `/auth/login`.
+- L’inscription utilise `POST /users/add`. DummyJSON ne persiste pas réellement les utilisateurs créés et ne renvoie pas de JWT sur cette route : l'application refuse donc de créer une fausse session et affiche une erreur explicite. Le login de démonstration utilise le JWT retourné par `/auth/login`.
 - Le token est conservé dans le stockage sécurisé et injecté par l’intercepteur Dio.
 - La session est restaurée au redémarrage et le `refreshToken` est conservé pour appeler `/auth/refresh`.
 - Les listes sont mises en cache dans Hive et servent de repli en cas d’erreur réseau.
