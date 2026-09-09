@@ -38,7 +38,7 @@ Une connexion est nécessaire au premier chargement des listes ; ensuite les don
 - API REST : trois écrans distincts pour produits, utilisateurs et tâches.
 - Persistance : Hive pour les listes et la session, stockage sécurisé pour les tokens.
 - Hors ligne : retour aux listes Hive lorsqu’une requête réseau échoue.
-- Tests : quatre tests unitaires de la couche repository dans `test/repository_test.dart`, incluant cache hors ligne, erreur réseau et payload invalide.
+- Tests : sept tests unitaires de la couche repository, répartis dans `test/repository_test.dart` et `test/auth_repository_test.dart`, couvrant cache hors ligne, erreur réseau, payload invalide, login JWT, restauration de session et logout.
 
 ## Vérification de la livraison
 
