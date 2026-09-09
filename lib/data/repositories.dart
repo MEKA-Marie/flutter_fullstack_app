@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'api_client.dart';
 import 'local_cache.dart';
 import 'models.dart';
+import '../domain/repositories.dart';
 
 class NetworkFailure implements Exception {
   NetworkFailure(this.message);
@@ -10,7 +11,7 @@ class NetworkFailure implements Exception {
   String toString() => message;
 }
 
-class AuthRepository {
+class AuthRepository implements AuthGateway {
   AuthRepository(this.client, this.cache);
   final ApiClient client;
   final LocalCache cache;
@@ -70,7 +71,7 @@ class AuthRepository {
   }
 }
 
-class DataRepository {
+class DataRepository implements DataGateway {
   DataRepository(this.client, this.cache);
   final ApiClient client;
   final LocalCache cache;

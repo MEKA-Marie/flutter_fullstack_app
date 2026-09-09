@@ -1,20 +1,21 @@
 # Pulseboard
 
-Application Flutter full-stack de suivi de données, construite en architecture Feature-First avec repository pattern.
+Application Flutter full-stack de suivi de données, construite avec une séparation `domain`, `data` et `presentation`, et le repository pattern.
 
 ## Architecture
 
+- `lib/domain/repositories.dart` : contrats métier indépendants de l'implémentation réseau.
 - `lib/data/models.dart` : modèles métier Product, AppUser et Todo.
 - `lib/data/api_client.dart` : client Dio et intercepteur bearer token.
 - `lib/data/local_cache.dart` : contrat de cache, Hive JSON et cache mémoire de test.
 - `lib/data/repositories.dart` : AuthRepository et DataRepository, indépendants de l’UI.
-- `lib/main.dart` : composition de l’application et présentation.
+- `lib/main.dart` : composition de l’application et présentation Flutter.
 
 ## APIs utilisées
 
 - [DummyJSON](https://dummyjson.com) fournit l’authentification et les produits, utilisateurs et tâches.
 - Identifiants de démonstration : `emilys` / `emilyspass`.
-- L’inscription utilise `POST /users/add`, puis ouvre une session locale de démonstration.
+- L’inscription utilise `POST /users/add`. DummyJSON ne persiste pas réellement les utilisateurs créés et ne renvoie pas de JWT sur cette route ; l'application conserve donc une session de démonstration après la création, tandis que le login de production utilise le JWT retourné par `/auth/login`.
 - Le token est conservé dans le stockage sécurisé et injecté par l’intercepteur Dio.
 - La session est restaurée au redémarrage et le `refreshToken` est conservé pour appeler `/auth/refresh`.
 - Les listes sont mises en cache dans Hive et servent de repli en cas d’erreur réseau.
@@ -37,4 +38,14 @@ Une connexion est nécessaire au premier chargement des listes ; ensuite les don
 - API REST : trois écrans distincts pour produits, utilisateurs et tâches.
 - Persistance : Hive pour les listes et la session, stockage sécurisé pour les tokens.
 - Hors ligne : retour aux listes Hive lorsqu’une requête réseau échoue.
-- Tests : trois tests unitaires de la couche repository dans `test/repository_test.dart`.
+- Tests : quatre tests unitaires de la couche repository dans `test/repository_test.dart`, incluant cache hors ligne, erreur réseau et payload invalide.
+
+## Vérification de la livraison
+
+```bash
+flutter analyze
+flutter test
+flutter build web
+```
+
+Le projet est publié sur GitHub : https://github.com/MEKA-Marie/flutter_fullstack_app
