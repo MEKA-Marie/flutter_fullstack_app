@@ -35,6 +35,7 @@ void main() {
     final users = await repository.users();
 
     expect(users.single.name, 'Ada Lovelace');
+    expect(repository.lastLoadWasCached, isTrue);
   });
 
   test('todos expose a user-facing failure when no cache exists', () async {

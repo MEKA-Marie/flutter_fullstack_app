@@ -74,6 +74,7 @@ class DataRepository {
   DataRepository(this.client, this.cache);
   final ApiClient client;
   final LocalCache cache;
+  bool lastLoadWasCached = false;
 
   Future<List<Product>> products() => _fetchList('products', '/products?limit=30', (data) => Product.fromJson(data));
   Future<List<AppUser>> users() => _fetchList('users', '/users?limit=30', (data) => AppUser.fromJson(data));
@@ -81,13 +82,17 @@ class DataRepository {
 
   Future<List<T>> _fetchList<T>(String key, String path, T Function(Map<String, dynamic>) parse) async {
     try {
+      lastLoadWasCached = false;
       final response = await client.dio.get(path);
       final rows = (response.data[key] as List<dynamic>).map((item) => Map<String, dynamic>.from(item as Map)).toList();
       await cache.saveList(key, rows);
       return rows.map(parse).toList();
     } on DioException catch (error) {
       final cached = cache.readList(key);
-      if (cached.isNotEmpty) return cached.map(parse).toList();
+      if (cached.isNotEmpty) {
+        lastLoadWasCached = true;
+        return cached.map(parse).toList();
+      }
       throw NetworkFailure(error.message ?? 'Données indisponibles. Vérifiez votre connexion.');
     }
   }

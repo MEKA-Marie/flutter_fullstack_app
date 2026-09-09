@@ -122,12 +122,17 @@ class _DashboardState extends State<Dashboard> {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           if (snapshot.hasError) return ErrorState(message: snapshot.error.toString(), retry: () => changeTab(tab));
           final value = snapshot.data!;
-          if (value is List<Product>) return ProductView(items: value);
-          if (value is List<AppUser>) return UserView(items: value);
-          return TodoView(items: value as List<Todo>);
+          final view = value is List<Product> ? ProductView(items: value) : value is List<AppUser> ? UserView(items: value) : TodoView(items: value as List<Todo>);
+          return Column(children: [if (widget.data.lastLoadWasCached) const OfflineBanner(), Expanded(child: view)]);
         }),
         bottomNavigationBar: NavigationBar(selectedIndex: tab, onDestinationSelected: changeTab, destinations: const [NavigationDestination(icon: Icon(Icons.inventory_2_outlined), label: 'Produits'), NavigationDestination(icon: Icon(Icons.people_outline), label: 'Équipe'), NavigationDestination(icon: Icon(Icons.checklist), label: 'Tâches')]),
       );
+}
+
+class OfflineBanner extends StatelessWidget {
+  const OfflineBanner({super.key});
+  @override
+  Widget build(BuildContext context) => Container(width: double.infinity, color: Theme.of(context).colorScheme.tertiaryContainer, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), child: const Row(children: [Icon(Icons.cloud_off, size: 18), SizedBox(width: 8), Expanded(child: Text('Mode hors ligne : données affichées depuis le cache local'))]));
 }
 
 class ProductView extends StatelessWidget {
