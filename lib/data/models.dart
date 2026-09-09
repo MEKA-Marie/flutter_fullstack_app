@@ -1,8 +1,9 @@
 class Session {
-  const Session({required this.token, required this.username});
+  const Session({required this.token, required this.username, this.refreshToken});
 
   final String token;
   final String username;
+  final String? refreshToken;
 }
 
 class Product {

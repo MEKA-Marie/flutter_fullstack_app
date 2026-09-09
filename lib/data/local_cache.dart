@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 abstract interface class LocalCache {
   Future<void> saveList(String key, List<Map<String, dynamic>> value);
   List<Map<String, dynamic>> readList(String key);
-  Future<void> saveSession(String token, String username);
+  Future<void> saveSession(String token, String username, {String? refreshToken});
   Map<String, String>? readSession();
   Future<void> clearSession();
 }
@@ -31,8 +31,8 @@ class HiveLocalCache implements LocalCache {
   }
 
   @override
-  Future<void> saveSession(String token, String username) async {
-    await _box.put('session', jsonEncode({'token': token, 'username': username}));
+  Future<void> saveSession(String token, String username, {String? refreshToken}) async {
+    await _box.put('session', jsonEncode({'token': token, 'username': username, 'refreshToken': refreshToken}));
   }
 
   @override
@@ -40,7 +40,11 @@ class HiveLocalCache implements LocalCache {
     final raw = _box.get('session');
     if (raw == null) return null;
     final decoded = Map<String, dynamic>.from(jsonDecode(raw) as Map);
-    return {'token': decoded['token'] as String, 'username': decoded['username'] as String};
+    return {
+      'token': decoded['token'] as String,
+      'username': decoded['username'] as String,
+      if (decoded['refreshToken'] != null) 'refreshToken': decoded['refreshToken'] as String,
+    };
   }
 
   @override
@@ -56,7 +60,7 @@ class MemoryCache implements LocalCache {
   @override
   List<Map<String, dynamic>> readList(String key) => lists[key] ?? [];
   @override
-  Future<void> saveSession(String token, String username) async => session = {'token': token, 'username': username};
+  Future<void> saveSession(String token, String username, {String? refreshToken}) async => session = {'token': token, 'username': username, ...?refreshToken == null ? null : {'refreshToken': refreshToken}};
   @override
   Map<String, String>? readSession() => session;
   @override

@@ -9,21 +9,25 @@ Future<void> main() async {
   final cache = HiveLocalCache();
   await cache.init();
   final client = ApiClient();
-  runApp(PulseboardApp(auth: AuthRepository(client, cache), data: DataRepository(client, cache), cache: cache));
+  final auth = AuthRepository(client, cache);
+  final data = DataRepository(client, cache);
+  final session = await auth.restore();
+  runApp(PulseboardApp(auth: auth, data: data, cache: cache, session: session));
 }
 
 class PulseboardApp extends StatelessWidget {
-  const PulseboardApp({super.key, required this.auth, required this.data, required this.cache});
+  const PulseboardApp({super.key, required this.auth, required this.data, required this.cache, this.session});
   final AuthRepository auth;
   final DataRepository data;
   final HiveLocalCache cache;
+  final Session? session;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Pulseboard',
         theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff146c94)), useMaterial3: true),
-        home: LoginPage(auth: auth, data: data, cache: cache),
+        home: session == null ? LoginPage(auth: auth, data: data, cache: cache) : Dashboard(session: session!, auth: auth, data: data, cache: cache),
       );
 }
 
@@ -47,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final session = await widget.auth.login(username.text.trim(), password.text);
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => Dashboard(session: session, auth: widget.auth, data: widget.data)));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => Dashboard(session: session, auth: widget.auth, data: widget.data, cache: widget.cache)));
     } catch (exception) {
       if (mounted) setState(() => error = exception.toString());
     } finally {
@@ -75,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
             try {
               final session = await widget.auth.register(username.text.trim(), password.text);
               if (!context.mounted) return;
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => Dashboard(session: session, auth: widget.auth, data: widget.data)));
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => Dashboard(session: session, auth: widget.auth, data: widget.data, cache: widget.cache)));
             } catch (exception) {
               if (mounted) setState(() => error = exception.toString());
             } finally {
@@ -88,10 +92,11 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key, required this.session, required this.auth, required this.data});
+  const Dashboard({super.key, required this.session, required this.auth, required this.data, required this.cache});
   final Session session;
   final AuthRepository auth;
   final DataRepository data;
+  final HiveLocalCache cache;
   @override
   State<Dashboard> createState() => _DashboardState();
 }
@@ -107,7 +112,7 @@ class _DashboardState extends State<Dashboard> {
 
   Future<void> logout() async {
     await widget.auth.logout();
-    if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => LoginPage(auth: widget.auth, data: widget.data, cache: HiveLocalCache())));
+    if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => LoginPage(auth: widget.auth, data: widget.data, cache: widget.cache)));
   }
 
   @override

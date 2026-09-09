@@ -19,21 +19,45 @@ class AuthRepository {
     try {
       final response = await client.dio.post('/auth/login', data: {'username': username, 'password': password, 'expiresInMins': 30});
       final token = response.data['accessToken'] as String? ?? response.data['token'] as String? ?? '';
-      final session = Session(token: token, username: response.data['username'] as String? ?? username);
-      await client.saveToken(session.token);
-      await cache.saveSession(session.token, session.username);
+      final session = Session(token: token, refreshToken: response.data['refreshToken'] as String?, username: response.data['username'] as String? ?? username);
+      await _persist(session);
       return session;
     } on DioException catch (error) {
       throw NetworkFailure(error.response?.data?['message'] as String? ?? 'Connexion impossible. Vérifiez vos identifiants.');
     }
   }
 
+  Future<Session?> restore() async {
+    final stored = cache.readSession();
+    if (stored == null) return null;
+    final session = Session(token: stored['token']!, username: stored['username']!, refreshToken: stored['refreshToken']);
+    await client.saveToken(session.token, refreshToken: session.refreshToken);
+    return session;
+  }
+
+  Future<Session> refresh(Session session) async {
+    final refreshToken = session.refreshToken;
+    if (refreshToken == null || refreshToken.isEmpty) return session;
+    try {
+      final response = await client.dio.post('/auth/refresh', data: {'refreshToken': refreshToken, 'expiresInMins': 30});
+      final refreshed = Session(token: response.data['accessToken'] as String? ?? session.token, refreshToken: response.data['refreshToken'] as String? ?? refreshToken, username: session.username);
+      await _persist(refreshed);
+      return refreshed;
+    } on DioException {
+      return session;
+    }
+  }
+
+  Future<void> _persist(Session session) async {
+    await client.saveToken(session.token, refreshToken: session.refreshToken);
+    await cache.saveSession(session.token, session.username, refreshToken: session.refreshToken);
+  }
+
   Future<Session> register(String username, String password) async {
     try {
       final response = await client.dio.post('/users/add', data: {'username': username, 'password': password, 'firstName': username, 'lastName': 'Pulseboard'});
       final session = Session(token: response.data['accessToken'] as String? ?? 'registered-demo', username: response.data['username'] as String? ?? username);
-      await client.saveToken(session.token);
-      await cache.saveSession(session.token, session.username);
+      await _persist(session);
       return session;
     } on DioException catch (error) {
       throw NetworkFailure(error.response?.data?['message'] as String? ?? 'Inscription impossible.');
