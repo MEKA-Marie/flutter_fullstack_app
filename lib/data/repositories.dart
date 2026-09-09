@@ -16,6 +16,7 @@ class AuthRepository implements AuthGateway {
   final ApiClient client;
   final LocalCache cache;
 
+  @override
   Future<Session> login(String username, String password) async {
     try {
       final response = await client.dio.post('/auth/login', data: {'username': username, 'password': password, 'expiresInMins': 30});
@@ -28,6 +29,7 @@ class AuthRepository implements AuthGateway {
     }
   }
 
+  @override
   Future<Session?> restore() async {
     final stored = cache.readSession();
     if (stored == null) return null;
@@ -36,6 +38,7 @@ class AuthRepository implements AuthGateway {
     return session;
   }
 
+  @override
   Future<Session> refresh(Session session) async {
     final refreshToken = session.refreshToken;
     if (refreshToken == null || refreshToken.isEmpty) return session;
@@ -54,6 +57,7 @@ class AuthRepository implements AuthGateway {
     await cache.saveSession(session.token, session.username, refreshToken: session.refreshToken);
   }
 
+  @override
   Future<Session> register(String username, String password) async {
     try {
       final response = await client.dio.post('/users/add', data: {'username': username, 'password': password, 'firstName': username, 'lastName': 'Pulseboard'});
@@ -65,6 +69,7 @@ class AuthRepository implements AuthGateway {
     }
   }
 
+  @override
   Future<void> logout() async {
     await client.clearToken();
     await cache.clearSession();
@@ -77,8 +82,11 @@ class DataRepository implements DataGateway {
   final LocalCache cache;
   bool lastLoadWasCached = false;
 
+  @override
   Future<List<Product>> products() => _fetchList('products', '/products?limit=30', (data) => Product.fromJson(data));
+  @override
   Future<List<AppUser>> users() => _fetchList('users', '/users?limit=30', (data) => AppUser.fromJson(data));
+  @override
   Future<List<Todo>> todos() => _fetchList('todos', '/todos?limit=30', (data) => Todo.fromJson(data));
 
   Future<List<T>> _fetchList<T>(String key, String path, T Function(Map<String, dynamic>) parse) async {
